@@ -47,3 +47,13 @@ def test_format_reference_json_contains_expected_fields():
     assert '"defined_in": "pkg.impl"' in output
     assert '"methods": [' in output
     assert '"doc": "Run it"' in output
+    assert '"doc_structured"' in output
+    assert '"summary"' in output
+
+
+def test_format_reference_includes_structured_markdown_before_raw_doc():
+    output = format_reference("pkg", SYMBOLS, include_doc=True)
+    idx_summary = output.find("summary:")
+    idx_example = output.find("Example class")
+    assert idx_summary != -1 and idx_example != -1
+    assert idx_summary < idx_example

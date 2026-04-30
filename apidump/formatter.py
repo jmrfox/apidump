@@ -2,13 +2,23 @@ from __future__ import annotations
 
 import json
 
+from .docstring_parse import format_structured_markdown, parse_docstring, structured_doc_to_json
 from .models import SymbolInfo
 
 
 def _append_doc(lines: list[str], doc: str, include_doc: bool) -> None:
     if include_doc and doc:
+        structured = format_structured_markdown(parse_docstring(doc))
+        if structured:
+            lines.append(structured)
+            lines.append("")
         lines.append(doc)
         lines.append("")
+
+
+def _doc_structured_json(raw: str) -> dict[str, object] | None:
+    payload = structured_doc_to_json(parse_docstring(raw))
+    return payload if payload else None
 
 
 def format_reference(
@@ -51,13 +61,16 @@ def format_reference(
     return "\n".join(lines).rstrip() + "\n"
 
 
-def _serialize_method(method, include_doc: bool) -> dict[str, str]:
-    payload = {
+def _serialize_method(method, include_doc: bool) -> dict[str, object]:
+    payload: dict[str, object] = {
         "name": method.name,
         "signature": method.signature,
     }
     if include_doc:
         payload["doc"] = method.doc
+        extra = _doc_structured_json(method.doc)
+        if extra:
+            payload["doc_structured"] = extra
     return payload
 
 
@@ -94,6 +107,9 @@ def format_reference_json(
         }
         if include_doc:
             payload["doc"] = symbol.doc
+            extra = _doc_structured_json(symbol.doc)
+            if extra:
+                payload["doc_structured"] = extra
         serialized_symbols.append(payload)
 
     document = {

@@ -185,8 +185,9 @@ The JSON includes:
   - `qualname`
   - `kind`
   - `signature`
-  - `doc` when enabled
-  - `methods` for classes
+  - `doc` when enabled (full cleaned docstring; always present when docs are enabled)
+  - `doc_structured` when enabled and parsing finds any structured fields (summary, parameters, returns, raises, examples, deprecated); omitted when empty
+  - `methods` for classes (each method may include `doc` and `doc_structured` the same way)
 
 ## Logging
 
