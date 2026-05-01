@@ -2,17 +2,20 @@ from pathlib import Path
 
 import pytest
 
-from apidump.cli import _log_mode_guidance, _validate_output_format
+from apidump.cli import _infer_output_format, _log_mode_guidance
 
 
-def test_validate_output_format_accepts_matching_suffix():
-    _validate_output_format(Path("output.json"), "json")
-    _validate_output_format(Path("output.md"), "markdown")
+def test_infer_output_format_from_json_suffix():
+    assert _infer_output_format(Path("output.json")) == "json"
 
 
-def test_validate_output_format_rejects_mismatch():
-    with pytest.raises(ValueError):
-        _validate_output_format(Path("output.md"), "json")
+def test_infer_output_format_from_md_suffix():
+    assert _infer_output_format(Path("output.md")) == "markdown"
+
+
+def test_infer_output_format_defaults_to_markdown():
+    assert _infer_output_format(Path("output.txt")) == "markdown"
+    assert _infer_output_format(Path("output")) == "markdown"
 
 
 @pytest.mark.parametrize("mode", ["compact", "complete"])

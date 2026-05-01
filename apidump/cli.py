@@ -13,22 +13,16 @@ from .walker import walk_package
 
 LOGGER = logging.getLogger(__name__)
 OUTPUT_SUFFIXES = {
-    "markdown": ".md",
-    "json": ".json",
+    ".md": "markdown",
+    ".json": "json",
 }
 LARGE_OUTPUT_WARNING_THRESHOLD = 200_000
 
 
-def _validate_output_format(output_path: Path, output_format: str) -> None:
-    expected_suffix = OUTPUT_SUFFIXES[output_format]
-    actual_suffix = output_path.suffix.lower()
-
-    if actual_suffix != expected_suffix:
-        raise ValueError(
-            "Output suffix does not match selected output format: "
-            f"expected '{expected_suffix}' for format '{output_format}', "
-            f"got '{output_path.suffix or '<none>'}'."
-        )
+def _infer_output_format(output_path: Path) -> str:
+    """Infer output format from file suffix. Defaults to markdown."""
+    suffix = output_path.suffix.lower()
+    return OUTPUT_SUFFIXES.get(suffix, "markdown")
 
 
 def _log_mode_guidance(mode: str) -> None:
@@ -93,12 +87,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Include dunder names such as __enter__",
     )
-    parser.add_argument(
-        "--output-format",
-        default="markdown",
-        choices=("markdown", "json"),
-        help="Output format for the generated reference",
-    )
     return parser
 
 
@@ -114,7 +102,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         include_private=args.include_private,
         include_dunder=args.include_dunder,
     )
-    _validate_output_format(options.output_path, args.output_format)
+    output_format = _infer_output_format(options.output_path)
 
     LOGGER.info(
         "Generating API reference for %s in %s mode",
@@ -160,7 +148,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         len(symbols),
     )
 
-    if args.output_format == "json":
+    if output_format == "json":
         reference = format_reference_json(
             package_name=options.package,
             symbols=deduplicated_symbols,

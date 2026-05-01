@@ -1,10 +1,16 @@
 # apidump
 
-`apidump` generates a single deterministic Markdown API reference for an installed Python package.
+`apidump` generates a single deterministic API reference file for an installed Python package, particularly geared toward LLM agent consumption.
+The goal is to provide a compact, structured reference file that helps an agent understand a package API the way a human would, without pushing it toward obscure internal symbols or unusual access paths.
 
-By default, it writes Markdown. It can also optionally emit the same reference information as JSON for structured ingestion.
+## Motivation
 
-The intended consumer is an LLM coding agent. The goal is to provide a compact, structured reference file that helps an agent understand a package API the way a human would, without pushing it toward obscure internal symbols or unusual access paths.
+Have you ever asked an LLM agent to generate some code using a specific Python package, only for it to confidently call methods that did not exist?
+I found that providing a clear and concise static API reference file in the agent context helps mediate this issue.
+
+However, deciding exactly what to include in the reference file can be tricky, as there are significant downsides to including too much information.
+The agent may use methods that are public but not commonly used, intended to be internal, or use methods in an unconventional way, leading to obscure code.
+Hence, `apidump` provides different modes to control the level of detail, and the default mode tries to strike a balance.
 
 ## What it does
 
@@ -27,60 +33,50 @@ The current implementation focuses on a conservative callable surface.
 - Excludes private names by default
 - Excludes dunder names by default
 
-## Installation
+## Installation & Usage
 
-### With `uv`
+Requires Python 3.10 or higher.
 
-Install the project in editable mode:
+If you use `uv`, you can install `apidump` as a tool, which will make it available globally without adding to project dependencies.
 
 ```bash
-uv pip install -e .
+uv tool install https://github.com/jmrfox/apidump.git
 ```
 
-If you want a build backend configured first, this project uses `hatchling`.
-
-## Usage
-
-Run via module:
+Then, run it directly:
 
 ```bash
-uv run python -m apidump <package>
+apidump <package>
 ```
 
 Write to a specific file:
 
 ```bash
-uv run python -m apidump -o .\outputs\pynapple.md pynapple
+apidump -o .windsurf\api_references\pynapple.json pynapple
 ```
 
 Generate an extended dump:
 
 ```bash
-uv run python -m apidump -o .\outputs\pynapple_extended.md --mode extended pynapple
+apidump -o .windsurf\api_references\pynapple_extended.json --mode extended pynapple
 ```
 
 Generate the most complete dump:
 
 ```bash
-uv run python -m apidump -o .\outputs\pynapple_complete.md --mode complete pynapple
+apidump -o .windsurf\api_references\pynapple_complete.json --mode complete pynapple
 ```
 
-Generate JSON instead of Markdown:
+Generate Markdown instead of JSON (just use `.md` suffix in the output path):
 
 ```bash
-uv run python -m apidump -o .\outputs\pynapple.json --mode standard --output-format json pynapple
-```
-
-If the console script is installed, you can also run:
-
-```bash
-apidump pynapple -o .\outputs\pynapple.md
+apidump -o .windsurf\api_references\pynapple.md --mode standard pynapple
 ```
 
 ## CLI options
 
 ```text
-usage: apidump [-h] [-o OUTPUT] [--mode {compact,complete,extended,standard}] [--include-private] [--include-dunder] [--output-format {markdown,json}] package
+usage: apidump [-h] [-o OUTPUT] [--mode {compact,complete,extended,standard}] [--include-private] [--include-dunder] package
 ```
 
 ### Positional arguments
@@ -102,30 +98,41 @@ usage: apidump [-h] [-o OUTPUT] [--mode {compact,complete,extended,standard}] [-
 - `--include-dunder`
   - Include dunder names such as `__enter__`
 
-- `--output-format {markdown,json}`
-  - Select the output format
-  - Default is `markdown`
-
 ## Modes
 
 - `compact`
-  - signatures only
-  - no methods
-  - no docstrings
+  - Minimal output for token-constrained contexts
+  - Includes only function and class signatures
+  - Excludes class methods entirely
+  - Excludes docstrings to reduce size
+  - Excludes utility modules (`utils`, `helpers`, `internals`)
+  - Best when you need only the callable surface with minimal overhead
 
-- `standard`
-  - public functions and classes
-  - public methods
-  - docstrings included
+- `standard` (default)
+  - Balanced detail for typical agent use
+  - Includes public functions and classes
+  - Includes public methods defined directly on classes
+  - Includes docstrings for context and usage guidance
+  - Excludes private names (underscore-prefixed)
+  - Excludes dunder names (`__init__`, `__enter__`, etc.)
+  - Excludes utility modules to focus on main API surface
+  - Recommended starting point for most packages
 
 - `extended`
-  - broader public surface than `standard`
-  - includes utility-style modules
-  - still excludes private names
+  - Broader public surface than `standard`
+  - Also includes utility-style modules (`utils`, `helpers`, `internals`)
+  - Still excludes private names and dunder methods
+  - Useful when you need access to helper functions and internal utilities
+  - Good for packages where utility modules are part of the public API
 
 - `complete`
-  - broadest introspection-oriented mode
-  - includes private names
+  - Broadest introspection-oriented mode
+  - Includes everything in `extended` mode
+  - Also includes private names (underscore-prefixed functions and classes)
+  - Still excludes dunder methods unless `--include-dunder` is passed
+  - Includes all modules including internal helpers
+  - Specific use cases only: debugging, understanding internals, or exploring private APIs
+  - Not recommended for typical usage due to noise from internal implementation details
 
 ## Canonical symbol paths
 
@@ -137,8 +144,30 @@ When the same underlying symbol is exposed from multiple places, `apidump` emits
 
 ## Output format
 
-Markdown is the default output format.
+The output format is determined by the file extension you provide:
 
+- `.json` → JSON (structured, optimal for LLM consumption)
+- `.md` or no extension → Markdown (human-readable)
+
+### JSON
+
+If you use `.json` as the output file extension, `apidump` writes a structured JSON document containing the same selected information for the chosen mode.
+
+The JSON includes:
+
+- top-level run metadata such as package name and doc inclusion
+- a `symbols` array
+- for each symbol:
+  - `name`
+  - `module`
+  - `defined_in`
+  - `qualname`
+  - `kind`
+  - `signature`
+  - `doc` when enabled (full cleaned docstring; always present when docs are enabled)
+  - `doc_structured` when enabled and parsing finds any structured fields (summary, parameters, returns, raises, examples, deprecated); omitted when empty
+  - `methods` for classes (each method may include `doc` and `doc_structured` the same way)
+  
 ### Markdown
 
 The generated Markdown file uses a predictable section layout like this:
@@ -170,54 +199,7 @@ signature: <signature>
 ---
 ```
 
-### JSON
-
-If you pass `--output-format json`, `apidump` writes a structured JSON document containing the same selected information for the chosen mode.
-
-The JSON includes:
-
-- top-level run metadata such as package name and doc inclusion
-- a `symbols` array
-- for each symbol:
-  - `name`
-  - `module`
-  - `defined_in`
-  - `qualname`
-  - `kind`
-  - `signature`
-  - `doc` when enabled (full cleaned docstring; always present when docs are enabled)
-  - `doc_structured` when enabled and parsing finds any structured fields (summary, parameters, returns, raises, examples, deprecated); omitted when empty
-  - `methods` for classes (each method may include `doc` and `doc_structured` the same way)
-
-## Logging
-
-`apidump` currently emits basic `INFO`-level logging during a run.
-
-Example:
-
-```text
-INFO Generating API reference for pynapple in standard mode
-INFO Imported 42 modules
-INFO Extracted 187 symbols (192 before deduplication)
-INFO Wrote API reference to outputs\pynapple.md
-```
-
-If a submodule import fails during traversal, `apidump` logs a warning and continues.
-
-## Example
-
-Generate a reference for `apidump` itself:
-
-```bash
-uv run python -m apidump -o .\outputs\apidump.md apidump
-```
-
 ## Development notes
 
-- Python requirement: `>=3.12`
+- Python requirement: `>=3.10`
 - Build backend: `hatchling`
-- Dev dependency example in this repo: `pynapple`
-
-## Status
-
-This is an early implementation. The current focus is deterministic extraction and clean LLM-oriented formatting rather than exhaustive Python object modeling.
