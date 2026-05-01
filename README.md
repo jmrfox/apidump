@@ -33,11 +33,35 @@ The current implementation focuses on a conservative callable surface.
 - Excludes private names by default
 - Excludes dunder names by default
 
+## Quick start
+
+```bash
+uv add --dev https://github.com/jmrfox/apidump.git
+uv run python -m apidump -o api_reference.json numpy
+```
+
+This produces a structured JSON file like:
+
+```json
+{
+  "package": "numpy",
+  "mode": "standard",
+  "symbols": [
+    {
+      "name": "numpy.array",
+      "kind": "function",
+      "signature": "(object, dtype=None, ...)",
+      "doc": "Create an array..."
+    }
+  ]
+}
+```
+
 ## Installation & Usage
 
 Requires Python 3.10 or higher.
 
-If you use `uv`, you might want to install `apidump` under "dev" dependencies:
+If you use `uv`, install `apidump` as a dev dependency:
 
 ```bash
 uv add --dev https://github.com/jmrfox/apidump.git
@@ -46,7 +70,7 @@ uv add --dev https://github.com/jmrfox/apidump.git
 Then, run it:
 
 ```bash
-uv run python -m apidump <package>
+uv run python -m apidump -o <output> <package>
 ```
 
 Write to a specific file:
@@ -227,3 +251,14 @@ signature: <signature>
 
 - Python requirement: `>=3.10`
 - Build backend: `hatchling`
+- Source layout: `src/`
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and how to submit a pull request.
+
+Please read and follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.

@@ -4,16 +4,25 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 
-# Recognized section titles (normalized key -> regex for line start, case-insensitive).
+# Recognized section titles (normalized key -> regex for line start).
 _GOOGLE_SECTION_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("args", re.compile(r"^(?:Args|Arguments|Parameters|Params)\s*:\s*(.*)$", re.I)),
+    (
+        "args",
+        re.compile(r"^(?:Args|Arguments|Parameters|Params)\s*:\s*(.*)$", re.I),
+    ),
     (
         "other_params",
         re.compile(r"^(?:Other\s+Parameters|Other\s+Args)\s*:\s*(.*)$", re.I),
     ),
-    ("returns", re.compile(r"^(?:Returns?|Return\s+values?)\s*:\s*(.*)$", re.I)),
+    (
+        "returns",
+        re.compile(r"^(?:Returns?|Return\s+values?)\s*:\s*(.*)$", re.I),
+    ),
     ("yields", re.compile(r"^Yields?\s*:\s*(.*)$", re.I)),
-    ("raises", re.compile(r"^(?:Raises?|Exceptions?|Errors?)\s*:\s*(.*)$", re.I)),
+    (
+        "raises",
+        re.compile(r"^(?:Raises?|Exceptions?|Errors?)\s*:\s*(.*)$", re.I),
+    ),
     ("examples", re.compile(r"^(?:Examples?)\s*:\s*(.*)$", re.I)),
     ("notes", re.compile(r"^(?:Notes?|Note)\s*:\s*(.*)$", re.I)),
     ("warnings", re.compile(r"^(?:Warnings?|Warning)\s*:\s*(.*)$", re.I)),
@@ -87,9 +96,13 @@ def _dedent_block(lines: list[str]) -> str:
     lines = _strip_blank_edges([line.rstrip() for line in lines])
     if not lines:
         return ""
-    indents = [len(line) - len(line.lstrip()) for line in lines if line.strip()]
+    indents = [
+        len(line) - len(line.lstrip()) for line in lines if line.strip()
+    ]
     margin = min(indents) if indents else 0
-    trimmed = [line[margin:] if len(line) >= margin else line for line in lines]
+    trimmed = [
+        line[margin:] if len(line) >= margin else line for line in lines
+    ]
     return "\n".join(trimmed).strip()
 
 
@@ -119,7 +132,7 @@ def _extract_deprecated(text: str) -> tuple[str, DeprecatedInfo | None]:
             version=None,
             replacement=None,
         )
-        cleaned = cleaned[: mline.start()] + cleaned[mline.end() :]
+        cleaned = cleaned[:mline.start()] + cleaned[mline.end():]
 
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
     return cleaned, dep
@@ -323,7 +336,11 @@ def _parse_google_parameters(block: str) -> list[ParamInfo]:
         if current_name is not None:
             desc = "\n".join(current_desc).strip()
             params.append(
-                ParamInfo(name=current_name, type=current_type, description=desc)
+                ParamInfo(
+                    name=current_name,
+                    type=current_type,
+                    description=desc,
+                )
             )
         current_name = None
         current_type = None
@@ -339,7 +356,11 @@ def _parse_google_parameters(block: str) -> list[ParamInfo]:
         m = _GOOGLE_PARAM_LINE.match(line)
         if m and m.group("name"):
             indent = len(m.group(1))
-            if current_indent is not None and indent > current_indent and current_name:
+            if (
+                current_indent is not None
+                and indent > current_indent
+                and current_name
+            ):
                 current_desc.append(line.strip())
                 continue
             flush()
@@ -378,7 +399,9 @@ _SPHINX_RAISES = re.compile(
 )
 
 
-def _parse_sphinx_fields(text: str) -> tuple[list[ParamInfo], ReturnInfo | None, list[RaiseInfo]]:
+def _parse_sphinx_fields(
+    text: str,
+) -> tuple[list[ParamInfo], ReturnInfo | None, list[RaiseInfo]]:
     param_types: dict[str, str | None] = {}
     param_descs: dict[str, list[str]] = defaultdict(list)
     return_desc: list[str] = []
@@ -500,7 +523,9 @@ def _parse_returns_block(block: str) -> ReturnInfo | None:
     if m:
         left, right = m.group(1).strip(), m.group(2).strip()
         if right and _looks_like_return_type(left):
-            body = "\n".join([right, *[ln.rstrip() for ln in lines[1:]]]).strip()
+            body = "\n".join(
+                [right, *[ln.rstrip() for ln in lines[1:]]]
+            ).strip()
             return ReturnInfo(type=left, description=body)
     return ReturnInfo(type=None, description=block)
 
@@ -516,7 +541,8 @@ def _split_example_blocks(body: str) -> tuple[str, ...]:
 
 def parse_docstring(doc: str) -> StructuredDoc:
     """
-    Parse a cleaned docstring (e.g. from inspect.getdoc) into structured fields.
+    Parse a cleaned docstring (e.g. from inspect.getdoc) into
+    structured fields.
 
     Supports Google-style sections, a subset of NumPy parameter blocks, and
     common Sphinx :param / :returns / :raises lines when no Google Args section
@@ -621,7 +647,7 @@ def structured_doc_to_json(doc: StructuredDoc) -> dict[str, object]:
 
 
 def format_structured_markdown(doc: StructuredDoc) -> str:
-    """Emit deterministic Markdown fragments for non-empty structured fields."""
+    """Emit Markdown fragments for non-empty structured fields."""
     lines: list[str] = []
     if doc.summary:
         lines.append("summary:")
@@ -634,7 +660,9 @@ def format_structured_markdown(doc: StructuredDoc) -> str:
             type_part = f" (`{p.type}`)" if p.type else ""
             lines.append(f"- `{p.name}`{type_part}: {p.description}".rstrip())
         lines.append("")
-    if doc.returns is not None and (doc.returns.description or doc.returns.type):
+    if doc.returns is not None and (
+        doc.returns.description or doc.returns.type
+    ):
         lines.append("### RETURNS")
         lines.append("")
         if doc.returns.type:

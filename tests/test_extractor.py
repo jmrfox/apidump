@@ -47,7 +47,9 @@ def test_extract_symbols_excludes_private_and_dunder_by_default():
     assert "sample_function" in names
     assert "_private_function" not in names
 
-    sample_symbol = next(symbol for symbol in symbols if symbol.name == "Sample")
+    sample_symbol = next(
+        symbol for symbol in symbols if symbol.name == "Sample"
+    )
     method_names = {method.name for method in sample_symbol.methods}
     assert "method" in method_names
     assert "__repr__" not in method_names
@@ -92,7 +94,10 @@ def test_deduplicate_symbols_prefers_public_alias_path() -> None:
     setattr(package_module, "shared", shared)
     setattr(internal_module, "shared", shared)
 
-    extracted = extract_symbols(package_module) + extract_symbols(internal_module)
+    extracted = (
+        extract_symbols(package_module)
+        + extract_symbols(internal_module)
+    )
     deduplicated = deduplicate_symbols(extracted)
 
     assert len(deduplicated) == 1

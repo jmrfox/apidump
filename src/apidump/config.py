@@ -57,7 +57,9 @@ def resolve_options(
     mode_config = MODES[mode]
     output_path = Path(output) if output else Path(f"{package}_api.md")
 
-    resolved_include_private = mode_config["include_private"] or include_private
+    resolved_include_private = (
+        mode_config["include_private"] or include_private
+    )
     resolved_include_dunder = mode_config["include_dunder"] or include_dunder
     resolved_exclude_tests = not include_tests and mode_config["exclude_tests"]
 

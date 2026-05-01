@@ -33,10 +33,15 @@ def walk_package(
 ) -> WalkResult:
     root_module, root_error = _safe_import(package_name)
     if root_module is None:
-        error_type = root_error.error_type if root_error is not None else "ImportError"
+        error_type = (
+            root_error.error_type
+            if root_error is not None
+            else "ImportError"
+        )
         message = root_error.message if root_error is not None else ""
         raise ImportError(
-            f"Failed to import package '{package_name}': " f"{error_type}: {message}"
+            f"Failed to import package '{package_name}': "
+            f"{error_type}: {message}"
         )
 
     modules: list[ModuleType] = [root_module]
@@ -61,7 +66,10 @@ def walk_package(
         )
         if (
             include_private
-            or all(not part.startswith("_") for part in module_info.name.split("."))
+            or all(
+                not part.startswith("_")
+                for part in module_info.name.split(".")
+            )
         )
         and (not exclude_tests or not _is_test_module(module_info.name))
     )

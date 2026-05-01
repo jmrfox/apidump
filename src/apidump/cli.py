@@ -87,7 +87,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--include-private",
         action="store_true",
-        help=("Include names beginning with an underscore " "(default: %(default)s)"),
+        help=(
+            "Include names beginning with an underscore "
+            "(default: %(default)s)"
+        ),
     )
     parser.add_argument(
         "--include-dunder",
