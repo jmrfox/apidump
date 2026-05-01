@@ -7,7 +7,7 @@ from typing import Sequence
 
 from .config import MODES, resolve_options
 from .extractor import deduplicate_symbols, extract_symbols
-from .formatter import format_reference, format_reference_json
+from .formatter import format_reference_md, format_reference_json
 from .walker import walk_package
 
 
@@ -20,9 +20,15 @@ LARGE_OUTPUT_WARNING_THRESHOLD = 200_000
 
 
 def _infer_output_format(output_path: Path) -> str:
-    """Infer output format from file suffix. Defaults to markdown."""
+    """Infer output format from file suffix. Must be either .json or .md."""
     suffix = output_path.suffix.lower()
-    return OUTPUT_SUFFIXES.get(suffix, "markdown")
+
+    if suffix not in OUTPUT_SUFFIXES:
+        raise ValueError(
+            f"Output file must have a .json or .md extension, got {suffix}"
+        )
+
+    return OUTPUT_SUFFIXES[suffix]
 
 
 def _log_mode_guidance(mode: str) -> None:
@@ -154,12 +160,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             symbols=deduplicated_symbols,
             include_doc=options.include_doc,
         )
-    else:
-        reference = format_reference(
+    elif output_format == "markdown":
+        reference = format_reference_md(
             package_name=options.package,
             symbols=deduplicated_symbols,
             include_doc=options.include_doc,
         )
+    else:
+        raise ValueError(f"Unsupported output format: {output_format}")
+
     _warn_if_output_is_large(reference)
     options.output_path.write_text(reference, encoding="utf-8")
     LOGGER.info("Wrote API reference to %s", options.output_path)

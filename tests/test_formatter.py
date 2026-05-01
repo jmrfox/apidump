@@ -1,4 +1,4 @@
-from apidump.formatter import format_reference, format_reference_json
+from apidump.formatter import format_reference_md, format_reference_json
 from apidump.models import MethodInfo, SymbolInfo
 
 
@@ -28,7 +28,7 @@ SYMBOLS = [
 
 
 def test_format_reference_contains_expected_sections():
-    output = format_reference("pkg", SYMBOLS, include_doc=True)
+    output = format_reference_md("pkg", SYMBOLS, include_doc=True)
 
     assert "# API REFERENCE: pkg" in output
     assert "## CLASS: Example" in output
@@ -52,7 +52,7 @@ def test_format_reference_json_contains_expected_fields():
 
 
 def test_format_reference_includes_structured_markdown_before_raw_doc():
-    output = format_reference("pkg", SYMBOLS, include_doc=True)
+    output = format_reference_md("pkg", SYMBOLS, include_doc=True)
     idx_summary = output.find("summary:")
     idx_example = output.find("Example class")
     assert idx_summary != -1 and idx_example != -1

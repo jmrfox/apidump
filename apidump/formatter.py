@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import json
 
-from .docstring_parse import format_structured_markdown, parse_docstring, structured_doc_to_json
+from .docstring_parse import (
+    format_structured_markdown,
+    parse_docstring,
+    structured_doc_to_json,
+)
 from .models import SymbolInfo
 
 
@@ -21,7 +25,7 @@ def _doc_structured_json(raw: str) -> dict[str, object] | None:
     return payload if payload else None
 
 
-def format_reference(
+def format_reference_md(
     package_name: str,
     symbols: list[SymbolInfo],
     include_doc: bool = True,
