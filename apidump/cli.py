@@ -75,23 +75,32 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-o",
         "--output",
-        help="Output file path",
+        required=True,
+        help="Output file path (.json or .md)",
     )
     parser.add_argument(
         "--mode",
         default="standard",
         choices=sorted(MODES),
-        help="Detail level for the generated reference",
+        help="Detail level for the generated reference (default: %(default)s)",
     )
     parser.add_argument(
         "--include-private",
         action="store_true",
-        help="Include names beginning with an underscore",
+        help=("Include names beginning with an underscore " "(default: %(default)s)"),
     )
     parser.add_argument(
         "--include-dunder",
         action="store_true",
-        help="Include dunder names such as __enter__",
+        help="Include dunder names such as __enter__ (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--include-tests",
+        action="store_true",
+        help=(
+            "Include test modules (submodules named 'test' or 'tests') "
+            "(default: %(default)s)"
+        ),
     )
     return parser
 
@@ -107,6 +116,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         mode=args.mode,
         include_private=args.include_private,
         include_dunder=args.include_dunder,
+        include_tests=args.include_tests,
     )
     output_format = _infer_output_format(options.output_path)
 
@@ -120,6 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     walk_result = walk_package(
         package_name=options.package,
         include_private=options.include_private,
+        exclude_tests=options.exclude_tests,
     )
 
     LOGGER.info(

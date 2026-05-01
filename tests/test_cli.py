@@ -13,9 +13,11 @@ def test_infer_output_format_from_md_suffix():
     assert _infer_output_format(Path("output.md")) == "markdown"
 
 
-def test_infer_output_format_defaults_to_markdown():
-    assert _infer_output_format(Path("output.txt")) == "markdown"
-    assert _infer_output_format(Path("output")) == "markdown"
+def test_infer_output_format_rejects_unsupported_suffix():
+    with pytest.raises(ValueError, match=".json or .md"):
+        _infer_output_format(Path("output.txt"))
+    with pytest.raises(ValueError, match=".json or .md"):
+        _infer_output_format(Path("output"))
 
 
 @pytest.mark.parametrize("mode", ["compact", "complete"])

@@ -13,16 +13,24 @@ def _safe_import(
     try:
         module = importlib.import_module(module_name)
     except Exception as exc:
+        # Handle pytest skip exceptions (optional dependencies in test files)
+        error_type = type(exc).__name__
+        if error_type == "Skipped":
+            error_type = "OptionalDependencyMissing"
         error = ImportErrorInfo(
             module_name=module_name,
-            error_type=type(exc).__name__,
+            error_type=error_type,
             message=str(exc),
         )
         return None, error
     return module, None
 
 
-def walk_package(package_name: str, include_private: bool = False) -> WalkResult:
+def walk_package(
+    package_name: str,
+    include_private: bool = False,
+    exclude_tests: bool = True,
+) -> WalkResult:
     root_module, root_error = _safe_import(package_name)
     if root_module is None:
         error_type = root_error.error_type if root_error is not None else "ImportError"
@@ -51,8 +59,11 @@ def walk_package(package_name: str, include_private: bool = False) -> WalkResult
             package_path,
             prefix=f"{package_name}.",
         )
-        if include_private
-        or all(not part.startswith("_") for part in module_info.name.split("."))
+        if (
+            include_private
+            or all(not part.startswith("_") for part in module_info.name.split("."))
+        )
+        and (not exclude_tests or not _is_test_module(module_info.name))
     )
 
     for module_name in discovered_names:
@@ -67,3 +78,9 @@ def walk_package(package_name: str, include_private: bool = False) -> WalkResult
         modules=tuple(modules),
         import_errors=tuple(import_errors),
     )
+
+
+def _is_test_module(module_name: str) -> bool:
+    """Check if a module is a test module (named 'test' or 'tests')."""
+    parts = module_name.split(".")
+    return any(part in ("test", "tests") for part in parts)

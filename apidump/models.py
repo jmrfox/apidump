@@ -56,3 +56,4 @@ class DumpOptions:
     include_doc: bool
     include_methods: bool
     exclude_utility_modules: bool
+    exclude_tests: bool

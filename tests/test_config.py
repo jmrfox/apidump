@@ -8,6 +8,7 @@ def test_resolve_options_standard_defaults():
         mode="standard",
         include_private=False,
         include_dunder=False,
+        include_tests=False,
     )
 
     assert options.output_path.name == "example_pkg_api.md"
@@ -26,6 +27,7 @@ def test_resolve_options_extended_includes_utility_modules():
         mode="extended",
         include_private=False,
         include_dunder=False,
+        include_tests=False,
     )
 
     assert options.output_path.name == "custom.json"
@@ -40,6 +42,7 @@ def test_resolve_options_complete_enables_private_symbols():
         mode="complete",
         include_private=False,
         include_dunder=False,
+        include_tests=False,
     )
 
     assert options.output_path.name == "custom.json"
